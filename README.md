@@ -1,4 +1,4 @@
-# Analys-an online taxi demand
+# Analyse-an online taxi demand
 ## All code in this project has done by r language
 In this project, I want to show you The Importance of data visualization.
 Imagine you are a data scientist in an online taxi company, and your manager has a problem with three questions:
