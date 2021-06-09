@@ -1,0 +1,299 @@
+---
+title: "Importance of Data Visulization With Uber Dataset"
+author: "Iman Jowkar"
+date: "6/9/2021"
+output:
+  prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+    math: katex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+<span style="color:blue">In this project, I want to show you The Importance of data visualization.<br/>
+Imagine you are a data scientist in an online taxi company, and your manager has a problem with three questions:<br/>
+</span>.
+<span style="color:red"> 1 - what times in a day the peak demand occurs?<br/>
+2 - what days in a week the peak demand occurs?<br/>
+3 - what days in a month the peak demand occur?<br/>
+</span>.
+<span style="color:blue">Your manager wants you to ask these questions by a dataset that gives you.<br/>
+Your job is to analyze this data for answering these questions.<br/>
+Ok, let's read the data set into R-studio:
+
+</span>.
+
+```{r echo = FALSE}
+
+# clear work directory --------------------------
+
+rm(list = ls())
+
+# setwork directory --------------------------
+setwd('F:/Fradars/ggplot2/2 - Uber Data Analysis with ggplot2/')
+
+
+```
+
+```{r import dataset}
+
+
+
+
+# Read data------------------------
+
+Jul_data <- read.csv("D:/uber-raw-data-jul14.csv", header = T)
+Aug_data <- read.csv("D:/uber-raw-data-aug14.csv", header = T)
+Sep_data <- read.csv("D:/uber-raw-data-sep14.csv", header = T)
+
+
+
+# View(Jul_data)
+# View(Aug_data)
+# View(Sep_data)
+
+str(Jul_data)
+
+```
+
+<span style="color:blue"> We have 4th columns(feature) in these datasets. 
+we only work with the specific column called 'Date.Time'.
+Lets adding some column to answer these questions
+</span>.
+
+
+
+```{r adding some column}
+# First of all we merge our datasets
+
+
+data = rbind(Jul_data, Aug_data, Sep_data)
+
+# change the format of 'Date.Time' column to time-format
+
+data$Date.Time <- as.POSIXct(data$Date.Time, format = "%m/%d/%Y %H:%M:%S")
+class(data$Date.Time)
+# str(data)
+# View(data)
+
+
+# Lets add a net column called 'Time'
+data$Time <- format(as.POSIXct(data$Date.Time, format = "%m/%d/%Y %H:%M:%S"),
+                         format="%H:%M:%S")
+
+# View(data)
+
+
+library(lubridate) # Our dataset involves various time-frames.
+# In order to understand our data in separate time categories,
+# we will make use of the lubridate package.
+data$day = factor(day(data$Date.Time))
+data$month = factor(month(data$Date.Time, label = T))
+# data$year = factor(year(April_data$Date.Time))
+data$dayofweek = factor(wday(data$Date.Time, label = T, abbr = F))
+data$hour = factor(hour(hms(data$Time)))
+# View(data)
+head(data)
+```
+
+```{r }
+# Hourly Demand
+hour_data = as.data.frame(table(data$hour))
+names(hour_data) = c('Hour', 'Demand')
+head(hour_data)
+# View(hour_data)
+
+
+library(ggplot2)
+library(ggthemes)
+library(scales)
+ggplot(hour_data, aes(x = Hour, y = Demand, group = 1)) + 
+  geom_bar(stat = 'identity', fill = 'blue',col = 'white') +
+  geom_point() +
+  scale_y_continuous(labels = comma) + 
+  annotate("text", label = "Pick Demand", x = 17, y = 198000, color = "red", size = 6) +
+  ylab('Number of Demand') +
+  theme_clean() + 
+  ggtitle('Hourly Demand')
+
+# It seems that about 17 and 18 we have pick demand.
+
+
+
+```
+```{r }
+hour_month_demand = table(data$hour, data$month)
+hour_month_demand
+class(hour_month_demand)
+hour_month_demand = as.data.frame(hour_month_demand)
+# View(hour_month_demand)
+names(hour_month_demand) = c('Hour','Month','Demand')
+
+ggplot(hour_month_demand, aes(x = Hour, y = Demand, fill = Month)) + 
+  geom_bar(stat = 'identity') +
+  scale_y_continuous(labels = comma) + 
+  annotate("text", label = "Pick Demand", x = 17, y = 198000, color = "red", size = 6) +
+  theme_base() + 
+  ggtitle('Hourly and monthly Demand')
+
+library(dplyr)
+
+July = data %>% 
+  filter(month == 'Jul')
+
+Augest = data %>%
+  filter(month == 'Aug')
+
+September = data %>% 
+  filter(month == 'Sep')
+
+hourly_demand_July = as.data.frame(table(July$hour))
+names(hourly_demand_July) = c('Hour','Demand')
+head(hourly_demand_July)
+
+p1 = ggplot(data = hourly_demand_July, aes(x = Hour, y = Demand)) + 
+  geom_bar(stat = 'identity', fill = 'blue', col = 'red') + 
+  ggtitle('July Hourly Demand') + 
+  theme_bw() + 
+  scale_y_continuous(breaks = seq(0,70000,by = 10000)) + 
+  expand_limits(y = c(0, 70000)) + 
+  geom_hline(yintercept=35000, linetype="dashed", color = "red")
+
+p1
+
+hourly_demand_Augest = as.data.frame(table(Augest$hour))
+names(hourly_demand_Augest) = c('Hour','Demand')
+head(hourly_demand_Augest)
+
+p2 = ggplot(data = hourly_demand_Augest, aes(x = Hour, y = Demand)) + 
+  geom_bar(stat = 'identity', fill = 'blue', col = 'red') + 
+  ggtitle('Augest Hourly Demand') + 
+  theme_bw() + 
+  scale_y_continuous(breaks = seq(0,70000,by = 10000)) +
+  expand_limits(y = c(0, 70000)) + 
+  geom_hline(yintercept=35000, linetype="dashed", color = "red")
+
+p2
+
+
+hourly_demand_September = as.data.frame(table(September$hour))
+names(hourly_demand_September) = c('Hour','Demand')
+head(hourly_demand_September)
+
+p3 = ggplot(data = hourly_demand_September, aes(x = Hour, y = Demand)) + 
+  geom_bar(stat = 'identity', fill = 'blue', col = 'red') + 
+  ggtitle('September Hourly Demand') + 
+  theme_bw() + 
+  scale_y_continuous(breaks = seq(0,70000,by = 10000)) + 
+  expand_limits(y = c(0, 70000)) + 
+  geom_hline(yintercept=35000, linetype="dashed", color = "red")
+
+p3
+
+
+plot1 = gridExtra::grid.arrange(p1, p2,p3, nrow = 3)
+# By seeing The graphs, we can answer question one:
+# As for the solution, I think It seems that the peak demand every three months occurs about 17 and 18.
+```
+
+
+```{r weekly demmand}
+# weekly demand
+
+Weekly_demand = as.data.frame(table(data$dayofweek))
+head(Weekly_demand)
+names(Weekly_demand) = c('Day','Demand')
+Weekly_demand
+
+red.bold.italic.text <- element_text(face = "bold.italic", color = "red", size = 16)
+black.bold.italic.16.text <- element_text(face = "bold.italic", color = "black", size = 10)
+ggplot(data = Weekly_demand, aes(x = Day, y = Demand)) + 
+  geom_bar(stat = 'identity', fill = 'blue', col = 'red') + 
+  ggtitle('Weekly Demand') + 
+  theme_bw() + 
+  theme(title = red.bold.italic.text, axis.title = red.bold.italic.text) + 
+  theme(axis.text = black.bold.italic.16.text)
+
+
+Week_Month_Demand = as.data.frame(table(data$dayofweek, data$month))
+head(Week_Month_Demand)
+names(Week_Month_Demand) = c('Day','Month','Demand')
+
+ggplot(data = Week_Month_Demand, aes(x = Day, y = Demand, fill = Month)) + 
+  geom_bar(stat = 'identity') + 
+  ggtitle('Weekly Demand') + 
+  theme_bw()
+
+
+
+Week_Demand_Augest = as.data.frame(table(Augest$dayofweek))
+head(Week_Demand_Augest)
+names(Week_Demand_Augest) = c('Day','Demand')
+
+p1 = ggplot(data = Week_Demand_Augest, aes(x = Day, y = Demand)) + 
+  geom_bar(stat = 'identity', fill = 'blue', col = 'red') + 
+  ggtitle('Augest Weekly Demand') + 
+  theme_bw()
+
+p1
+
+
+
+Week_Demand_July = as.data.frame(table(July$dayofweek))
+head(Week_Demand_July)
+names(Week_Demand_July) = c('Day','Demand')
+
+p1 = ggplot(data = Week_Demand_July, aes(x = Day, y = Demand)) + 
+  geom_bar(stat = 'identity', fill = 'blue', col = 'red') + 
+  ggtitle('July Weekly Demand') + 
+  theme_bw()
+
+
+Week_Demand_Augest = as.data.frame(table(Augest$dayofweek))
+head(Week_Demand_Augest)
+names(Week_Demand_Augest) = c('Day','Demand')
+
+p2 = ggplot(data = Week_Demand_Augest, aes(x = Day, y = Demand)) + 
+  geom_bar(stat = 'identity', fill = 'blue', col = 'red') + 
+  ggtitle('Augest Weekly Demand') + 
+  theme_bw()
+
+
+
+Week_Demand_september = as.data.frame(table(September$dayofweek))
+head(Week_Demand_september)
+names(Week_Demand_september) = c('Day','Demand')
+
+p3 = ggplot(data = Week_Demand_september, aes(x = Day, y = Demand)) + 
+  geom_bar(stat = 'identity', fill = 'blue', col = 'red') + 
+  ggtitle('September Weekly Demand') + 
+  theme_bw()
+
+
+plot2 = gridExtra::grid.arrange(p1, p2,p3, nrow = 3)
+
+```
+
+
+```{r monthly demand}
+Montly_Demand = as.data.frame(table(data$month))
+head(Montly_Demand)
+names(Montly_Demand) = c('Month','Demand')
+
+p = ggplot(data = Montly_Demand, aes(x = Month, y = Demand)) + 
+  geom_bar(stat = 'identity', col = 'red', fill = 'blue') + 
+  theme_bw()
+
+p
+# It seems That in September The company has a big demand rather than the previous month.
+```
+
+
+As for The results:<br>
+question one: Hourly demand on each day is about 17 & 18.<br>
+question Two: This is not an obvious trend in each month.<br>
+question one: on september, we have a higher demand rather than the other month.
+
+
